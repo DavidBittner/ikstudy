@@ -198,22 +198,24 @@ void Arm::calcAngles( Coord reachPos )
         double angle = 0.0;
         int jointsLeft = jointNum - i;
 
-        if( round(distance( jointPos.at( jointPos.size()-1 ), startPos )) == jointLength )
+        if( round(distance( jointPos.at( jointPos.size()-1 ), startPos )) == jointLength*2 )
         {
 
             angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), startPos );
 
-        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) < jointLength )
+        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) < jointLength*2 )
         {
 
             Coord tempPos = circleIntersectPoint( jointPos.at(jointPos.size()-1), jointLength, startPos, jointLength );
 
             angle = angleOfInclin( jointPos.at(jointPos.size()-1), tempPos );
 
-        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) > jointLength )
+        }else
         {
 
-            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), startPos );
+            Coord tempPos = circleIntersectPoint( jointPos.at(jointPos.size()-1), jointLength, startPos, jointLength*jointsLeft );
+    
+            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), tempPos );
 
         }
 
