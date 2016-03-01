@@ -27,12 +27,60 @@ double distance( Coord a, Coord b )
 
 }
 
+double normalizeAngle( double ang )
+{
+
+    while( ang < 0 )
+    {
+
+        ang+=(2*PI);
+
+    }
+
+    while( ang > (2*PI) )
+    {
+
+        ang-=(2*PI);
+
+    }
+
+    return ang;
+
+}
+
+int getQuad( Coord a )
+{
+
+    if( a.x > 0 && a.y > 0 )
+    {
+
+        return 1;
+
+    }else if( a.x < 0 && a.y > 0 )
+    {
+
+        return 2;
+
+    }else if( a.x < 0 && a.y < 0 )
+    {
+
+        return 3;
+
+    }else if( a.x > 0 && a.y < 0 )
+    {
+
+        return 4;
+
+    }
+
+    return -1;
+
+}
+
 double angleOfInclin( Coord a, Coord b )
 {
 
     double dx = b.x - a.x, dy = b.y - a.y;
-
-    printf( "dx:%f, dy:%f\n", dx, dy );
 
     if( dx == 0 )
     {
@@ -67,12 +115,33 @@ double angleOfInclin( Coord a, Coord b )
 
     }
 
-    return atan(dy/dx);
+    double retVal = 0.0;
+
+    if( getQuad( Coord( dx, dy ) ) == 1 )
+    {
+
+        retVal = atan( dy/dx );
+
+    }else if( getQuad( Coord( dx, dy ) ) == 2 || getQuad( Coord( dx, dy ) ) == 3 )
+    {
+
+        retVal = atan( dy/dx ) + PI;
+
+    }else if( getQuad( Coord( dx, dy ) ) == 4 )
+    {
+
+        retVal = atan( dy/dx ) + 2*PI;
+
+    }
+
+    return retVal;
 
 }
 
 Arm::Arm( Coord startPos, int jointNum, double jointLength )
 {
+
+    printf( "%f\n", angleOfInclin( Coord( 0, 0 ), Coord( 2, -2 ) ) );
 
     srand( time(nullptr) );
 
@@ -126,56 +195,36 @@ void Arm::calcAngles( Coord reachPos )
     for( int i = 0; i < jointNum; i++ )
     {
 
-        if( distance( jointPos.at(i), startPos ) >= jointLength*2 )
+        double angle = 0.0;
+        int jointsLeft = jointNum - i;
+
+        if( round(distance( jointPos.at( jointPos.size()-1 ), startPos )) == jointLength )
         {
 
-            double ang = angleOfInclin( startPos, jointPos.at(i) );
-            double xComp = cos(ang)*jointLength;
-            double yComp = sin(ang)*jointLength;
+            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), startPos );
 
-            xComp = jointPos.at(i).x - xComp;
-            yComp = jointPos.at(i).y - yComp;
-
-            jointPos.push_back( Coord( xComp, yComp ) );
-
-        }else if( round(distance( jointPos.at(i), startPos )) == jointLength ) 
+        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) < jointLength )
         {
 
-            jointPos.push_back( Coord( startPos.x, startPos.y ) );
+            Coord tempPos = circleIntersectPoint( jointPos.at(jointPos.size()-1), jointLength, startPos, jointLength );
 
-        }else
+            angle = angleOfInclin( jointPos.at(jointPos.size()-1), tempPos );
+
+        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) > jointLength )
         {
 
-            Coord tempPos = circleIntersectPoint( startPos, jointLength, jointPos.at(i), jointLength );
-
-            double ang = angleOfInclin( tempPos, jointPos.at(i) );
-
-            double xComp = cos(ang)*jointLength;
-            double yComp = sin(ang)*jointLength;
-
-            xComp = jointPos.at(i).x - xComp;
-            yComp = jointPos.at(i).y - yComp;
-
-            jointPos.push_back( Coord( xComp, yComp ) );
+            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), startPos );
 
         }
 
-    }
+        double xComp = cos( angle ) * jointLength;
+        double yComp = sin( angle ) * jointLength;
 
-    if( jointPos.at(jointNum-1).x != startPos.x || jointPos.at(jointNum-1).y != startPos.y )
-    {
+        xComp += jointPos.at( jointPos.size()-1 ).x;
+        yComp += jointPos.at( jointPos.size()-1 ).y;
 
-        double dx = jointPos.at(jointNum).x - startPos.x;
-        double dy = jointPos.at(jointNum).y - startPos.y;
+        jointPos.push_back( Coord( xComp, yComp ) );
 
-        for( int i = 0; i < jointNum+1; i++ )
-        {
-            
-            jointPos.at(i).x-=dx;
-            jointPos.at(i).y-=dy;
-
-        }
-        
     }
 
     for( Coord a : jointPos )
