@@ -126,7 +126,7 @@ void Arm::calcAngles( Coord reachPos )
     for( int i = 0; i < jointNum; i++ )
     {
 
-        if( distance( jointPos.at(i), startPos ) >= jointLength*(jointNum-i) )
+        if( distance( jointPos.at(i), startPos ) >= jointLength*2 )
         {
 
             double ang = angleOfInclin( startPos, jointPos.at(i) );
