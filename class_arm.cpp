@@ -27,6 +27,26 @@ double distance( Coord a, Coord b )
 
 }
 
+void DrawCircle( Coord mid, double r )
+{
+
+    glPushAttrib( GL_CURRENT_BIT );
+
+    glColor3f( 0.2f, 0.2f, 0.2f );
+
+    glBegin( GL_LINE_LOOP );
+    for( double i = 0; i < 2*PI; i+=0.1 )
+    {
+
+        glVertex2f( mid.x+cos( i )*r, mid.y + sin( i )*r );
+
+    }
+    glEnd();
+
+    glPopAttrib();
+
+}
+
 double normalizeAngle( double ang )
 {
 
@@ -104,12 +124,12 @@ double angleOfInclin( Coord a, Coord b )
         if( dx > 0 )
         {
 
-            return PI;
+            return 0;
 
         }else
         {
 
-            return 0;
+            return PI;
 
         }
 
@@ -141,8 +161,6 @@ double angleOfInclin( Coord a, Coord b )
 Arm::Arm( Coord startPos, int jointNum, double jointLength )
 {
 
-    printf( "%f\n", angleOfInclin( Coord( 0, 0 ), Coord( 2, -2 ) ) );
-
     srand( time(nullptr) );
 
     this->startPos = startPos; 
@@ -151,8 +169,9 @@ Arm::Arm( Coord startPos, int jointNum, double jointLength )
 
 }
 
-Coord circleIntersectPoint( Coord c0, double r0, Coord c1, float r1 )
+Coord *circleIntersectPoint( Coord c0, double r0, Coord c1, double r1, Coord *defLoc )
 {
+    
     double a, dx, dy, d, h, rx, ry;
     Coord midPoint;
 
@@ -160,6 +179,13 @@ Coord circleIntersectPoint( Coord c0, double r0, Coord c1, float r1 )
     dy = c1.y - c0.y;
 
     d = hypot(dx,dy);
+    
+    if( d > r0+r1 )
+    {
+
+        return defLoc;
+
+    }
 
     a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
 
@@ -171,9 +197,7 @@ Coord circleIntersectPoint( Coord c0, double r0, Coord c1, float r1 )
     rx = -dy * (h/d);
     ry = dx * (h/d);
 
-    Coord temp = Coord( midPoint.x + rx, midPoint.y + ry ); 
-
-    return temp;
+    return new Coord( midPoint.x + rx, midPoint.y + ry );
 
 }
 
@@ -181,13 +205,6 @@ void Arm::calcAngles( Coord reachPos )
 {
 
     points.clear();
-
-    if( distance( reachPos, startPos ) > jointLength*jointNum )
-    {
-
-        //printf( "Cannot reach.\n" );
-
-    }
 
     std::vector<Coord> jointPos;
     jointPos.push_back( reachPos );
@@ -197,27 +214,22 @@ void Arm::calcAngles( Coord reachPos )
 
         double angle = 0.0;
         int jointsLeft = jointNum - i;
+        Coord newestPoint = jointPos.at(jointPos.size()-1);
 
-        if( round(distance( jointPos.at( jointPos.size()-1 ), startPos )) == jointLength*2 )
+        Coord *temp;
+
+        if( jointsLeft-1 == 0 )
         {
 
-            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), startPos );
-
-        }else if( distance( jointPos.at( jointPos.size()-1 ), startPos ) < jointLength*2 )
-        {
-
-            Coord tempPos = circleIntersectPoint( jointPos.at(jointPos.size()-1), jointLength, startPos, jointLength );
-
-            angle = angleOfInclin( jointPos.at(jointPos.size()-1), tempPos );
+            temp = &startPos;
 
         }else
         {
-
-            Coord tempPos = circleIntersectPoint( jointPos.at(jointPos.size()-1), jointLength, startPos, jointLength*jointsLeft );
-    
-            angle = angleOfInclin( jointPos.at( jointPos.size()-1 ), tempPos );
+        
+            temp = circleIntersectPoint( newestPoint, jointLength, startPos, jointLength*(jointsLeft-1), &startPos );
 
         }
+        angle = angleOfInclin( newestPoint, *temp );
 
         double xComp = cos( angle ) * jointLength;
         double yComp = sin( angle ) * jointLength;
@@ -229,11 +241,14 @@ void Arm::calcAngles( Coord reachPos )
 
     }
 
+    double dx = startPos.x-jointPos.at( jointPos.size()-1 ).x;
+    double dy = startPos.y-jointPos.at( jointPos.size()-1 ).y;
+
     for( Coord a : jointPos )
     {
 
-        points.push_back( a.x );
-        points.push_back( a.y );
+        points.push_back( a.x+dx );
+        points.push_back( a.y+dy );
 
     }
 
