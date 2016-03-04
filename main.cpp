@@ -60,7 +60,7 @@ int main()
 
     glfwSwapInterval( 1 );
 
-    Arm newArm( Coord( 400, 300 ), 6, 100 );
+    Arm newArm( Coord( 400, 300 ), 5, 200 );
 
     mousePos.x = 400;
     mousePos.y = 400;
